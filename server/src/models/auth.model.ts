@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 interface IAuth extends Document {
   username: string;
   email: string;
-  fullName: string;
+  fullName?: string;
   password: string;
   refreshToken?: string;
   createdAt: Date;

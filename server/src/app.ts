@@ -19,8 +19,10 @@ app.use(cookieParser());
 
 //routes import
 import authRoutes from "./routes/auth.routes";
+import productRoutes from "./routes/products.routes";
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/products", productRoutes);
 
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
