@@ -8,6 +8,7 @@ interface IAuth extends Document {
   fullName?: string;
   password: string;
   refreshToken?: string;
+  role: 'user' | 'admin';
   createdAt: Date;
   isPasswordMatch(enteredPassword: string): Promise<boolean>;
   generateJWT(): string;
@@ -42,6 +43,11 @@ const authSchema = new Schema<IAuth>({
     },
     refreshToken: {
       type: String,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
     },
 }, { timestamps: true });
 

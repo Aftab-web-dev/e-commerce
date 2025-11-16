@@ -21,10 +21,12 @@ app.use(cookieParser());
 import authRoutes from "./routes/auth.routes";
 import productRoutes from "./routes/products.routes";
 import cartRoutes from "./routes/cart.routes";
+import adminRoutes from "./routes/admin.routes";
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/cart", cartRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
