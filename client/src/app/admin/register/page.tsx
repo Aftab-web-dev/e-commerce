@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/lib/axiosInstance';
 
-export default function SignUp() {
+export default function AdminRegister() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     fullName: '',
     password: '',
+    adminSecret: '',
   });
 
   const [error, setError] = useState('');
@@ -31,7 +32,13 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-      const response = await axiosInstance.post('/v1/auth/register', formData);
+      const response = await axiosInstance.post('/v1/auth/register-admin', {
+        username: formData.username,
+        email: formData.email,
+        fullName: formData.fullName,
+        password: formData.password,
+        adminSecret: formData.adminSecret,
+      });
 
       if (response.data?.data) {
         const { accessToken, refreshToken } = response.data.data;
@@ -40,12 +47,12 @@ export default function SignUp() {
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
 
-        // Success - redirect to login
-        router.push('/auth/login');
+        // Redirect to admin dashboard
+        router.push('/admin');
       }
     } catch (err: any) {
       const errorMessage =
-        err.response?.data?.message || 'Sign up failed. Please try again.';
+        err.response?.data?.message || 'Admin registration failed. Please try again.';
       setError(errorMessage);
       console.error(err);
     } finally {
@@ -58,8 +65,11 @@ export default function SignUp() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="text-center text-3xl font-bold text-gray-900">
-            Create your account
+            Register as Admin
           </h2>
+          <p className="text-center text-sm text-gray-600 mt-2">
+            Create your admin account
+          </p>
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -84,7 +94,7 @@ export default function SignUp() {
               value={formData.username}
               onChange={handleChange}
               className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Choose a username"
+              placeholder="admin_username"
             />
           </div>
 
@@ -103,7 +113,7 @@ export default function SignUp() {
               value={formData.email}
               onChange={handleChange}
               className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="your@email.com"
+              placeholder="admin@example.com"
             />
           </div>
 
@@ -122,7 +132,7 @@ export default function SignUp() {
               value={formData.fullName}
               onChange={handleChange}
               className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Your full name"
+              placeholder="Your Full Name"
             />
           </div>
 
@@ -145,19 +155,41 @@ export default function SignUp() {
             />
           </div>
 
+          <div>
+            <label
+              htmlFor="adminSecret"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Admin Secret Key
+            </label>
+            <input
+              id="adminSecret"
+              name="adminSecret"
+              type="password"
+              required
+              value={formData.adminSecret}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Enter admin secret key"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              (Set ADMIN_SECRET_KEY in your .env file)
+            </p>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
             className="w-full rounded bg-blue-600 py-2 px-4 text-white font-medium hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
           >
-            {loading ? 'Creating account...' : 'Sign up'}
+            {loading ? 'Registering...' : 'Register as Admin'}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-600">
           Already have an account?{' '}
           <Link href="/auth/login" className="text-blue-600 hover:text-blue-700">
-            Log in
+            Log in here
           </Link>
         </p>
       </div>

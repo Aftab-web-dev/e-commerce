@@ -40,7 +40,7 @@ export default function Home() {
     try {
       setLoading(true);
       setError('');
-      const response = await axiosInstance.get('/products/getall', {
+      const response = await axiosInstance.get('/v1/products/getall', {
         params: {
           page,
           limit: 12,

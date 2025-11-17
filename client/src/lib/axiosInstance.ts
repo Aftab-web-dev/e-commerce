@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+const BASE_URL =  'http://localhost:8000';
 const API_BASE_URL = `${BASE_URL}/api`;
 
 const axiosInstance = axios.create({
@@ -38,7 +38,7 @@ axiosInstance.interceptors.response.use(
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
           const response = await axios.post(
-            `${API_BASE_URL}/auth/refresh-token`,
+            `${API_BASE_URL}/v1/auth/refresh-token`,
             { refreshToken }
           );
 

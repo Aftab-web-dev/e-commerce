@@ -177,7 +177,85 @@ const logoutUser = asyncHandler(async (req: ExpressRequest, res: ExpressResponse
         .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
+// Register Admin
+const registerAdmin = asyncHandler(async (req: ExpressRequest, res: ExpressResponse) => {
+    const { username, email, fullName, password, adminSecret } = req.body;
 
+    // Verify admin secret key
+    const secretKey = process.env.ADMIN_SECRET_KEY;
+    if (!adminSecret || adminSecret !== secretKey) {
+        throw new ApiError(401, "Invalid admin secret key");
+    }
 
+    // Validation - check if all fields are provided and not empty
+    if (!username || !email || !fullName || !password) {
+        throw new ApiError(400, "All fields are required");
+    }
 
-export { registerUser, loginUser, refreshAccessToken, logoutUser };
+    // Trim and validate fields
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedFullName = fullName.trim();
+
+    // Basic validation for username (alphanumeric and underscore only)
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(trimmedUsername)) {
+        throw new ApiError(400, "Username must be 3-20 characters, alphanumeric and underscore only");
+    }
+
+    // Basic email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        throw new ApiError(400, "Invalid email format");
+    }
+
+    // Password validation (minimum 6 characters)
+    if (password.length < 6) {
+        throw new ApiError(400, "Password must be at least 6 characters");
+    }
+
+    // Check if user already exists with same username or email
+    const existingUser = await AuthModel.findOne({
+        $or: [
+            { username: trimmedUsername },
+            { email: trimmedEmail }
+        ]
+    });
+
+    if (existingUser) {
+        throw new ApiError(409, "User with this username or email already exists");
+    }
+
+    // Create new admin user
+    const newAdmin = await AuthModel.create({
+        username: trimmedUsername,
+        email: trimmedEmail,
+        fullName: trimmedFullName,
+        password: password,
+        role: 'admin' // Set role as admin
+    });
+
+    // Generate tokens
+    const accessToken = newAdmin.generateJWT();
+    const refreshToken = newAdmin.generateRefreshToken();
+
+    // Update refresh token in database
+    newAdmin.refreshToken = refreshToken;
+    await newAdmin.save({ validateBeforeSave: false });
+
+    // Remove sensitive fields from response
+    const userResponse = {
+        _id: newAdmin._id,
+        username: newAdmin.username,
+        email: newAdmin.email,
+        fullName: newAdmin.fullName,
+        role: newAdmin.role,
+        createdAt: newAdmin.createdAt
+    };
+
+    return res
+        .status(201)
+        .json(
+            new ApiResponse(201, { user: userResponse, accessToken, refreshToken }, "Admin registered successfully")
+        );
+});
+
+export { registerUser, loginUser, refreshAccessToken, logoutUser, registerAdmin };

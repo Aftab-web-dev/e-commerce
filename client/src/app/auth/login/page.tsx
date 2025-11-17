@@ -38,7 +38,7 @@ export default function Login() {
           : { username: formData.emailOrUsername }),
       };
 
-      const response = await axiosInstance.post('/auth/login', loginData);
+      const response = await axiosInstance.post('/v1/auth/login', loginData);
 
       if (response.data?.data) {
         const { accessToken, refreshToken } = response.data.data;
