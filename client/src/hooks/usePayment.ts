@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import axios, { AxiosError } from 'axios';
 import axiosInstance from '@/lib/axiosInstance';
 
 export interface PaymentIntentResponse {
@@ -6,9 +7,25 @@ export interface PaymentIntentResponse {
   paymentIntentId: string;
 }
 
+interface ApiErrorResponse {
+  message: string;
+  statusCode: number;
+}
+
 export function usePayment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const getErrorMessage = (err: unknown): string => {
+    if (axios.isAxiosError(err)) {
+      const axiosErr = err as AxiosError<ApiErrorResponse>;
+      return axiosErr.response?.data?.message || axiosErr.message || 'An error occurred';
+    }
+    if (err instanceof Error) {
+      return err.message;
+    }
+    return 'An unknown error occurred';
+  };
 
   // Create Payment Intent
   const createPaymentIntent = useCallback(
@@ -26,8 +43,8 @@ export function usePayment() {
         });
 
         return response.data.data as PaymentIntentResponse;
-      } catch (err: any) {
-        const errorMessage = err.response?.data?.message || 'Failed to create payment intent';
+      } catch (err: unknown) {
+        const errorMessage = getErrorMessage(err);
         setError(errorMessage);
         console.error(err);
         return null;
@@ -51,8 +68,8 @@ export function usePayment() {
         });
 
         return response.data.data;
-      } catch (err: any) {
-        const errorMessage = err.response?.data?.message || 'Failed to confirm payment';
+      } catch (err: unknown) {
+        const errorMessage = getErrorMessage(err);
         setError(errorMessage);
         console.error(err);
         return null;
@@ -71,8 +88,8 @@ export function usePayment() {
 
       const response = await axiosInstance.get(`/v1/payment/status/${paymentIntentId}`);
       return response.data.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to get payment status';
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err);
       setError(errorMessage);
       console.error(err);
       return null;
