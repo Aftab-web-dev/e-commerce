@@ -1,3 +1,8 @@
+'use client';
+
+import { useState } from 'react';
+import { useCart } from '@/hooks/useCart';
+
 interface ProductCardProps {
   _id: string;
   productName: string;
@@ -15,6 +20,26 @@ export default function ProductCard({
   category,
   rating,
 }: ProductCardProps) {
+  const { addToCart } = useCart();
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleAddToCart = async () => {
+    try {
+      setLoading(true);
+      setMessage('');
+      await addToCart(_id, quantity);
+      setMessage('Added to cart!');
+      setQuantity(1);
+      setTimeout(() => setMessage(''), 2000);
+    } catch (error) {
+      setMessage('Failed to add to cart');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
       {/* Product Image Placeholder */}
@@ -42,11 +67,50 @@ export default function ProductCard({
         </span>
       </div>
 
+      {/* Success Message */}
+      {message && (
+        <div className="mb-2 p-2 bg-green-50 text-green-700 text-xs rounded text-center">
+          {message}
+        </div>
+      )}
+
       {/* Price and Button */}
-      <div className="flex items-center justify-between">
-        <span className="text-2xl font-bold text-blue-600">${price}</span>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
-          Add Cart
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-2xl font-bold text-blue-600">${price}</span>
+        </div>
+
+        {/* Quantity Selector */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            disabled={quantity <= 1}
+            className="bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300 disabled:opacity-50"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            value={quantity}
+            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+            className="w-12 px-2 py-1 border border-gray-300 rounded text-center text-gray-900"
+            min="1"
+          />
+          <button
+            onClick={() => setQuantity(quantity + 1)}
+            className="bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+          >
+            +
+          </button>
+        </div>
+
+        {/* Add to Cart Button */}
+        <button
+          onClick={handleAddToCart}
+          disabled={loading}
+          className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium"
+        >
+          {loading ? 'Adding...' : '🛒 Add to Cart'}
         </button>
       </div>
     </div>

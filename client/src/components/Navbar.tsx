@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCart } from '@/hooks/useCart';
 
 export default function Navbar() {
   const router = useRouter();
+  const { cart, fetchCart } = useCart();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -14,7 +16,12 @@ export default function Navbar() {
     const token = localStorage.getItem('accessToken');
     setIsLoggedIn(!!token);
     setMounted(true);
-  }, []);
+
+    // Fetch cart if logged in
+    if (token) {
+      fetchCart();
+    }
+  }, [fetchCart]);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
@@ -80,8 +87,13 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           {isLoggedIn ? (
             <>
-              <Link href="/cart" className="text-gray-700 hover:text-blue-600">
+              <Link href="/cart" className="relative text-gray-700 hover:text-blue-600 font-medium">
                 🛒 Cart
+                {cart && cart.totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {cart.totalItems}
+                  </span>
+                )}
               </Link>
               <button
                 onClick={handleLogout}
