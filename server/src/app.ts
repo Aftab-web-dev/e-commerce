@@ -7,7 +7,7 @@ import { ApiError } from './utils/ApiError';
 const app = express();
 
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: 'https://e-commerce-blond-three-76.vercel.app',
     credentials: true
 }
 ));
