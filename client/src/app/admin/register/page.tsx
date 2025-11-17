@@ -7,12 +7,13 @@ import axiosInstance from '@/lib/axiosInstance';
 
 export default function AdminRegister() {
   const router = useRouter();
+  const DEFAULT_ADMIN_SECRET = 'MySecretAdminKey2024!';
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     fullName: '',
     password: '',
-    adminSecret: '',
+    adminSecret: DEFAULT_ADMIN_SECRET,
   });
 
   const [error, setError] = useState('');
@@ -162,18 +163,30 @@ export default function AdminRegister() {
             >
               Admin Secret Key
             </label>
-            <input
-              id="adminSecret"
-              name="adminSecret"
-              type="password"
-              required
-              value={formData.adminSecret}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Enter admin secret key"
-            />
+            <div className="relative mt-1">
+              <input
+                id="adminSecret"
+                name="adminSecret"
+                type="text"
+                required
+                value={formData.adminSecret}
+                onChange={handleChange}
+                className="block w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Enter admin secret key"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(formData.adminSecret);
+                  alert('Secret key copied to clipboard!');
+                }}
+                className="absolute right-2 top-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Copy
+              </button>
+            </div>
             <p className="text-xs text-gray-500 mt-1">
-              (Set ADMIN_SECRET_KEY in your .env file)
+              Default admin secret key is pre-filled. You can change it if needed.
             </p>
           </div>
 

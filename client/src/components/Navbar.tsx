@@ -48,6 +48,12 @@ export default function Navbar() {
           </div>
           <div className="flex items-center gap-4">
             <Link
+              href="/admin/login"
+              className="text-purple-600 hover:text-purple-700 font-medium"
+            >
+              👨‍💼 Admin
+            </Link>
+            <Link
               href="/auth/login"
               className="text-gray-700 hover:text-blue-600"
             >
@@ -85,6 +91,12 @@ export default function Navbar() {
 
         {/* Right Side - Auth Links */}
         <div className="flex items-center gap-4">
+          <Link
+            href="/admin/login"
+            className="text-purple-600 hover:text-purple-700 font-medium"
+          >
+            👨‍💼 Admin
+          </Link>
           {isLoggedIn ? (
             <>
               <Link href="/cart" className="relative text-gray-700 hover:text-blue-600 font-medium">

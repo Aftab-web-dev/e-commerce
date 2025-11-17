@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/hooks/useCart';
 
 interface ProductCardProps {
@@ -20,12 +21,21 @@ export default function ProductCard({
   category,
   rating,
 }: ProductCardProps) {
+  const router = useRouter();
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   const handleAddToCart = async () => {
+    // Check if user is logged in
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      // Redirect to login if not authenticated
+      router.push('/auth/login');
+      return;
+    }
+
     try {
       setLoading(true);
       setMessage('');

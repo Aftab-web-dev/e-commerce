@@ -193,7 +193,7 @@ const registerAdmin = asyncHandler(async (req: ExpressRequest, res: ExpressRespo
     }
 
     // Trim and validate fields
-    const trimmedUsername = username.trim();
+    const trimmedUsername = username.trim().toLowerCase();
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedFullName = fullName.trim();
 
@@ -258,4 +258,60 @@ const registerAdmin = asyncHandler(async (req: ExpressRequest, res: ExpressRespo
         );
 });
 
-export { registerUser, loginUser, refreshAccessToken, logoutUser, registerAdmin };
+// Login Admin
+const loginAdmin = asyncHandler(async (req: ExpressRequest, res: ExpressResponse) => {
+    const { username, email, password } = req.body;
+
+    // Validation - at least one identifier required
+    if ((!username && !email) || !password) {
+        throw new ApiError(400, "Username/Email and password are required");
+    }
+
+    // Find user by username or email
+    const admin = await AuthModel.findOne({
+        $or: [
+            { username: username?.toLowerCase() },
+            { email: email?.toLowerCase() }
+        ]
+    });
+
+    if (!admin) {
+        throw new ApiError(401, "Invalid username/email or password");
+    }
+
+    // Check if user is admin
+    if (admin.role !== 'admin') {
+        throw new ApiError(403, "Access denied: Admin role required");
+    }
+
+    // Check if password matches
+    const isPasswordMatch = await admin.isPasswordMatch(password);
+    if (!isPasswordMatch) {
+        throw new ApiError(401, "Invalid username/email or password");
+    }
+
+    // Generate new tokens
+    const accessToken = admin.generateJWT();
+    const refreshToken = admin.generateRefreshToken();
+
+    // Update refresh token in database
+    admin.refreshToken = refreshToken;
+    await admin.save({ validateBeforeSave: false });
+
+    // Remove sensitive fields from response
+    const adminResponse = {
+        _id: admin._id,
+        username: admin.username,
+        email: admin.email,
+        fullName: admin.fullName,
+        role: admin.role
+    };
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, { user: adminResponse, accessToken, refreshToken }, "Admin logged in successfully")
+        );
+});
+
+export { registerUser, loginUser, refreshAccessToken, logoutUser, registerAdmin, loginAdmin };
