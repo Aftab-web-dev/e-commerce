@@ -95,6 +95,12 @@ const confirmPayment = asyncHandler(async (req: ExpressRequest, res: ExpressResp
     const stripe = getStripeInstance();
 
     try {
+      console.log('Creating payment method with card details:', {
+        cardNum: cardNumCleaned,
+        expMonth,
+        expYear,
+      });
+
       // First, create a payment method from card details
       const paymentMethod = await stripe.paymentMethods.create({
         type: 'card',
@@ -106,6 +112,8 @@ const confirmPayment = asyncHandler(async (req: ExpressRequest, res: ExpressResp
         },
       });
 
+      console.log('Payment method created:', paymentMethod.id);
+
       // Then confirm payment with the payment method ID
       const paymentIntent = await stripe.paymentIntents.confirm(
         paymentIntentId,
@@ -113,6 +121,8 @@ const confirmPayment = asyncHandler(async (req: ExpressRequest, res: ExpressResp
           payment_method: paymentMethod.id,
         }
       );
+
+      console.log('Payment intent confirmed:', paymentIntent.status);
 
       if (paymentIntent.status === 'succeeded') {
         // Update order status in database
@@ -147,7 +157,10 @@ const confirmPayment = asyncHandler(async (req: ExpressRequest, res: ExpressResp
         throw new ApiError(402, "Payment failed");
       }
     } catch (error: any) {
-      throw new ApiError(402, error.message || "Payment confirmation failed");
+      console.error('Payment error:', error);
+      const errorMsg = error.message || error.raw?.message || "Payment confirmation failed";
+      console.error('Error details:', errorMsg);
+      throw new ApiError(402, errorMsg);
     }
   } else {
     // Fallback: just check status (for backward compatibility)
