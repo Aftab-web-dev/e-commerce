@@ -57,7 +57,13 @@ export function usePayment() {
 
   // Confirm Payment
   const confirmPayment = useCallback(
-    async (paymentIntentId: string, orderId: string) => {
+    async (
+      paymentIntentId: string,
+      orderId: string,
+      cardNumber?: string,
+      cardExpiry?: string,
+      cardCvc?: string
+    ) => {
       try {
         setLoading(true);
         setError('');
@@ -65,6 +71,9 @@ export function usePayment() {
         const response = await axiosInstance.post('/v1/payment/confirm', {
           paymentIntentId,
           orderId,
+          ...(cardNumber && { cardNumber }),
+          ...(cardExpiry && { cardExpiry }),
+          ...(cardCvc && { cardCvc }),
         });
 
         return response.data.data;

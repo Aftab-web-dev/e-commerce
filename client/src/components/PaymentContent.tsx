@@ -38,14 +38,19 @@ function PaymentContentInner() {
         throw new Error('Payment intent ID is missing');
       }
 
-      // In a real implementation, you would:
-      // 1. Use Stripe Elements to tokenize the card
-      // 2. Confirm the payment with Stripe
-      // 3. Then confirm with your backend
+      // Validate card details
+      if (!cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim()) {
+        throw new Error('Please fill in all card details');
+      }
 
-      // For now, we'll confirm the payment directly
-      // This assumes Stripe has already processed the payment on the client side
-      const result = await confirmPayment(paymentIntentId, 'order_' + Date.now());
+      // Send card details to backend for confirmation
+      const result = await confirmPayment(
+        paymentIntentId,
+        'order_' + Date.now(),
+        cardNumber,
+        cardExpiry,
+        cardCvc
+      );
 
       if (result && result.status === 'succeeded') {
         setPaymentStatus('success');
