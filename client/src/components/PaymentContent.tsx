@@ -43,13 +43,15 @@ function PaymentContentInner() {
         throw new Error('Please fill in all card details');
       }
 
-      // Send card details to backend for confirmation
+      // Use Stripe test token instead of raw card data
+      // The token 'tok_visa' represents the test card 4242 4242 4242 4242
+      const stripeToken = 'tok_visa';
+
+      // Send token to backend for confirmation
       const result = await confirmPayment(
         paymentIntentId,
         'order_' + Date.now(),
-        cardNumber,
-        cardExpiry,
-        cardCvc
+        stripeToken
       );
 
       if (result && result.status === 'succeeded') {

@@ -60,9 +60,7 @@ export function usePayment() {
     async (
       paymentIntentId: string,
       orderId: string,
-      cardNumber?: string,
-      cardExpiry?: string,
-      cardCvc?: string
+      stripeToken?: string
     ) => {
       try {
         setLoading(true);
@@ -71,9 +69,7 @@ export function usePayment() {
         const response = await axiosInstance.post('/v1/payment/confirm', {
           paymentIntentId,
           orderId,
-          ...(cardNumber && { cardNumber }),
-          ...(cardExpiry && { cardExpiry }),
-          ...(cardCvc && { cardCvc }),
+          ...(stripeToken && { stripeToken }),
         });
 
         return response.data.data;

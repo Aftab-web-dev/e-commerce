@@ -52,73 +52,26 @@ const createPaymentIntent = asyncHandler(async (req: ExpressRequest, res: Expres
   );
 });
 
-// Confirm Payment (after client-side payment)
+// Confirm Payment (after client-side payment with Stripe token)
 const confirmPayment = asyncHandler(async (req: ExpressRequest, res: ExpressResponse) => {
-  const { paymentIntentId, orderId, cardNumber, cardExpiry, cardCvc } = req.body;
+  const { paymentIntentId, orderId, stripeToken } = req.body;
 
   if (!paymentIntentId) {
     throw new ApiError(400, "Payment Intent ID is required");
   }
 
-  // Validate card details if provided
-  if (cardNumber || cardExpiry || cardCvc) {
-    if (!cardNumber || !cardExpiry || !cardCvc) {
-      throw new ApiError(400, "All card details (number, expiry, CVC) are required");
-    }
+  const stripe = getStripeInstance();
 
-    // Validate card number format (basic check)
-    const cardNumCleaned = cardNumber.replace(/\s/g, '');
-    if (!/^\d{13,19}$/.test(cardNumCleaned)) {
-      throw new ApiError(400, "Invalid card number");
-    }
+  try {
+    // If token is provided, confirm payment with it
+    if (stripeToken) {
+      console.log('Confirming payment with Stripe token:', stripeToken);
 
-    // Validate expiry format MM/YY
-    if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) {
-      throw new ApiError(400, "Invalid expiry date format. Use MM/YY");
-    }
-
-    // Validate CVC format
-    if (!/^\d{3,4}$/.test(cardCvc)) {
-      throw new ApiError(400, "Invalid CVC");
-    }
-
-    // Parse expiry date
-    const [month, year] = cardExpiry.split('/');
-    const expMonth = parseInt(month, 10);
-    const expYear = parseInt('20' + year, 10);
-
-    // Validate expiry date
-    if (expMonth < 1 || expMonth > 12) {
-      throw new ApiError(400, "Invalid expiry month");
-    }
-
-    const stripe = getStripeInstance();
-
-    try {
-      console.log('Creating payment method with card details:', {
-        cardNum: cardNumCleaned,
-        expMonth,
-        expYear,
-      });
-
-      // First, create a payment method from card details
-      const paymentMethod = await stripe.paymentMethods.create({
-        type: 'card',
-        card: {
-          number: cardNumCleaned,
-          exp_month: expMonth,
-          exp_year: expYear,
-          cvc: cardCvc,
-        },
-      });
-
-      console.log('Payment method created:', paymentMethod.id);
-
-      // Then confirm payment with the payment method ID
+      // Confirm payment with the Stripe token
       const paymentIntent = await stripe.paymentIntents.confirm(
         paymentIntentId,
         {
-          payment_method: paymentMethod.id,
+          payment_method: stripeToken,
         }
       );
 
@@ -156,51 +109,50 @@ const confirmPayment = asyncHandler(async (req: ExpressRequest, res: ExpressResp
       } else {
         throw new ApiError(402, "Payment failed");
       }
-    } catch (error: any) {
-      console.error('Payment error:', error);
-      const errorMsg = error.message || error.raw?.message || "Payment confirmation failed";
-      console.error('Error details:', errorMsg);
-      throw new ApiError(402, errorMsg);
-    }
-  } else {
-    // Fallback: just check status (for backward compatibility)
-    const stripe = getStripeInstance();
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    if (paymentIntent.status === 'succeeded') {
-      // Update order status in database
-      if (orderId) {
-        await Order.findByIdAndUpdate(
-          orderId,
-          {
-            paymentStatus: 'completed',
-            paymentIntentId: paymentIntentId,
-            orderStatus: 'confirmed',
-          },
-          { new: true }
-        );
-      }
-
-      res.status(200).json(
-        new ApiResponse(
-          200,
-          { status: paymentIntent.status },
-          "Payment confirmed successfully"
-        )
-      );
-    } else if (paymentIntent.status === 'processing') {
-      res.status(202).json(
-        new ApiResponse(
-          202,
-          { status: paymentIntent.status },
-          "Payment is processing"
-        )
-      );
-    } else if (paymentIntent.status === 'requires_payment_method') {
-      throw new ApiError(402, "Payment method required");
     } else {
-      throw new ApiError(402, "Payment failed");
+      // Fallback: just check status if no token provided
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+      if (paymentIntent.status === 'succeeded') {
+        // Update order status in database
+        if (orderId) {
+          await Order.findByIdAndUpdate(
+            orderId,
+            {
+              paymentStatus: 'completed',
+              paymentIntentId: paymentIntentId,
+              orderStatus: 'confirmed',
+            },
+            { new: true }
+          );
+        }
+
+        res.status(200).json(
+          new ApiResponse(
+            200,
+            { status: paymentIntent.status },
+            "Payment confirmed successfully"
+          )
+        );
+      } else if (paymentIntent.status === 'processing') {
+        res.status(202).json(
+          new ApiResponse(
+            202,
+            { status: paymentIntent.status },
+            "Payment is processing"
+          )
+        );
+      } else if (paymentIntent.status === 'requires_payment_method') {
+        throw new ApiError(402, "Payment method required");
+      } else {
+        throw new ApiError(402, "Payment failed");
+      }
     }
+  } catch (error: any) {
+    console.error('Payment error:', error);
+    const errorMsg = error.message || error.raw?.message || "Payment confirmation failed";
+    console.error('Error details:', errorMsg);
+    throw new ApiError(402, errorMsg);
   }
 });
 
